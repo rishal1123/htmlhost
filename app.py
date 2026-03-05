@@ -134,6 +134,18 @@ DASHBOARD_HTML = """
     {% if msg %}<div class="msg {{ msg_type }}">{{ msg }}</div>{% endif %}
 
     <div class="section">
+        <h2>Change Password</h2>
+        <div class="box">
+            <form method="POST" action="/change-password" style="display:flex;align-items:center;justify-content:center;gap:.8rem;flex-wrap:wrap">
+                <input type="password" name="current" placeholder="Current password" required>
+                <input type="password" name="new_password" placeholder="New password" required>
+                <input type="password" name="confirm" placeholder="Confirm new password" required>
+                <button type="submit">Change</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="section">
         <h2>Allowed File Types</h2>
         <div class="box">
             <form method="POST" action="/settings" style="display:flex;align-items:center;justify-content:center;gap:.8rem;flex-wrap:wrap">
@@ -293,6 +305,25 @@ def rmdir(dirname):
         return redirect(url_for("dashboard", msg="Directory not found.", msg_type="error"))
     shutil.rmtree(dirpath)
     return redirect(url_for("dashboard", msg=f"Deleted directory '{dirname}'.", msg_type="success"))
+
+
+@app.route("/change-password", methods=["POST"])
+@login_required
+def change_password():
+    current = request.form.get("current", "")
+    new_password = request.form.get("new_password", "")
+    confirm = request.form.get("confirm", "")
+    users = load_users()
+    username = session["user"]
+    if not check_password_hash(users.get(username, ""), current):
+        return redirect(url_for("dashboard", msg="Current password is incorrect.", msg_type="error"))
+    if len(new_password) < 4:
+        return redirect(url_for("dashboard", msg="New password must be at least 4 characters.", msg_type="error"))
+    if new_password != confirm:
+        return redirect(url_for("dashboard", msg="New passwords do not match.", msg_type="error"))
+    users[username] = generate_password_hash(new_password)
+    save_users(users)
+    return redirect(url_for("dashboard", msg="Password changed successfully.", msg_type="success"))
 
 
 @app.route("/settings", methods=["POST"])
