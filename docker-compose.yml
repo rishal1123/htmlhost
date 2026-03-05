@@ -4,7 +4,7 @@ services:
     image: htmlhost:latest
     container_name: htmlhost
     ports:
-      - "5000:5000"
+      - "5004:5000"
     volumes:
       - ./uploads:/app/uploads
       - ./users.json:/app/users.json
