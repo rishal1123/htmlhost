@@ -38,7 +38,7 @@ def login_required(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
         if "user" not in session:
-            return redirect(url_for("login"))
+            return redirect(url_for("index"))
         return f(*args, **kwargs)
     return wrapper
 
@@ -180,8 +180,8 @@ DASHBOARD_HTML = """
 
 # --- Routes ---
 
-@app.route("/login", methods=["GET", "POST"])
-def login():
+@app.route("/", methods=["GET", "POST"])
+def index():
     if request.method == "POST":
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
@@ -190,16 +190,18 @@ def login():
             session["user"] = username
             return redirect(url_for("dashboard"))
         return render_template_string(LOGIN_HTML, msg="Invalid credentials.", msg_type="error")
+    if "user" in session:
+        return redirect(url_for("dashboard"))
     return render_template_string(LOGIN_HTML, msg=None, msg_type=None)
 
 
 @app.route("/logout")
 def logout():
     session.pop("user", None)
-    return redirect(url_for("login"))
+    return redirect(url_for("index"))
 
 
-@app.route("/")
+@app.route("/dashboard")
 @login_required
 def dashboard():
     dirs = sorted(d for d in os.listdir(UPLOAD_DIR) if os.path.isdir(os.path.join(UPLOAD_DIR, d)))
