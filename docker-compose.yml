@@ -3,6 +3,7 @@ services:
     build: .
     image: htmlhost:latest
     container_name: htmlhost
+    network_mode: host
     ports:
       - "5004:5000"
     volumes:

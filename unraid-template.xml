@@ -7,7 +7,7 @@
     <Tag>latest</Tag>
     <TagDescription>Latest stable release</TagDescription>
   </Branch>
-  <Network>bridge</Network>
+  <Network>host</Network>
   <Privileged>false</Privileged>
   <Support>https://github.com/rishal1123/htmlhost/issues</Support>
   <Project>https://github.com/rishal1123/htmlhost</Project>
