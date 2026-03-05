@@ -13,12 +13,12 @@
   <Project>https://github.com/rishal1123/htmlhost</Project>
   <Overview>A simple web app to upload and host HTML files. Upload .html files via the web UI and they are instantly hosted. Re-uploading a file with the same name replaces it.</Overview>
   <Category>Tools: Network:Web</Category>
-  <WebUI>http://[IP]:[PORT:5000]</WebUI>
+  <WebUI>http://[IP]:[PORT:5004]</WebUI>
   <Icon>https://raw.githubusercontent.com/rishal1123/htmlhost/main/icon.png</Icon>
   <ExtraParams/>
   <DateInstalled/>
   <Description>A simple web app to upload and host HTML files.</Description>
-  <Config Name="Web UI Port" Target="5000" Default="5000" Mode="tcp" Description="Web interface port" Type="Port" Display="always" Required="true" Mask="false">5000</Config>
+  <Config Name="Web UI Port" Target="5004" Default="5004" Mode="tcp" Description="Web interface port" Type="Port" Display="always" Required="true" Mask="false">5004</Config>
   <Config Name="Uploads" Target="/app/uploads" Default="/mnt/user/appdata/htmlhost/uploads" Mode="rw" Description="Where uploaded HTML files are stored" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/htmlhost/uploads</Config>
   <Config Name="Users File" Target="/app/users.json" Default="/mnt/user/appdata/htmlhost/users.json" Mode="rw" Description="User credentials file" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/htmlhost/users.json</Config>
   <Config Name="Admin Password" Target="ADMIN_PASSWORD" Default="admin" Description="Initial admin password (only used on first run)" Type="Variable" Display="always" Required="true" Mask="true">admin</Config>

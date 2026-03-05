@@ -9,7 +9,7 @@ COPY app.py .
 
 RUN mkdir -p /app/uploads
 
-EXPOSE 5000
+EXPOSE 5004
 
 ENV ADMIN_PASSWORD=admin
 ENV SECRET_KEY=""
@@ -17,4 +17,4 @@ ENV SECRET_KEY=""
 VOLUME /app/uploads
 VOLUME /app/users.json
 
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "app:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5004", "--workers", "2", "app:app"]
