@@ -20,4 +20,7 @@
   <Description>A simple web app to upload and host HTML files.</Description>
   <Config Name="Web UI Port" Target="5000" Default="5000" Mode="tcp" Description="Web interface port" Type="Port" Display="always" Required="true" Mask="false">5000</Config>
   <Config Name="Uploads" Target="/app/uploads" Default="/mnt/user/appdata/htmlhost/uploads" Mode="rw" Description="Where uploaded HTML files are stored" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/htmlhost/uploads</Config>
+  <Config Name="Users File" Target="/app/users.json" Default="/mnt/user/appdata/htmlhost/users.json" Mode="rw" Description="User credentials file" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/htmlhost/users.json</Config>
+  <Config Name="Admin Password" Target="ADMIN_PASSWORD" Default="admin" Description="Initial admin password (only used on first run)" Type="Variable" Display="always" Required="true" Mask="true">admin</Config>
+  <Config Name="Secret Key" Target="SECRET_KEY" Default="" Description="Session secret key (auto-generated if empty)" Type="Variable" Display="always" Required="false" Mask="true"></Config>
 </Container>

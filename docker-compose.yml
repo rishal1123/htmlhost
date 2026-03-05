@@ -7,4 +7,8 @@ services:
       - "5000:5000"
     volumes:
       - ./uploads:/app/uploads
+      - ./users.json:/app/users.json
+    environment:
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
+      - SECRET_KEY=${SECRET_KEY:-changeme}
     restart: unless-stopped
