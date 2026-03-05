@@ -14,8 +14,11 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "data")
 UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
 USERS_FILE = os.path.join(DATA_DIR, "users.json")
+SETTINGS_FILE = os.path.join(DATA_DIR, "settings.json")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(DATA_DIR, exist_ok=True)
+
+DEFAULT_EXTENSIONS = [".html", ".htm"]
 
 # --- User helpers ---
 
@@ -44,6 +47,19 @@ def login_required(f):
             return redirect(url_for("index"))
         return f(*args, **kwargs)
     return wrapper
+
+def load_settings():
+    if os.path.exists(SETTINGS_FILE):
+        with open(SETTINGS_FILE) as f:
+            return json.load(f)
+    return {"allowed_extensions": DEFAULT_EXTENSIONS}
+
+def save_settings(settings):
+    with open(SETTINGS_FILE, "w") as f:
+        json.dump(settings, f, indent=2)
+
+def get_allowed_extensions():
+    return tuple(load_settings().get("allowed_extensions", DEFAULT_EXTENSIONS))
 
 def safe_dirname(name):
     name = re.sub(r'[^a-zA-Z0-9_\-]', '', name)
@@ -118,6 +134,18 @@ DASHBOARD_HTML = """
     {% if msg %}<div class="msg {{ msg_type }}">{{ msg }}</div>{% endif %}
 
     <div class="section">
+        <h2>Allowed File Types</h2>
+        <div class="box">
+            <form method="POST" action="/settings" style="display:flex;align-items:center;justify-content:center;gap:.8rem;flex-wrap:wrap">
+                <label style="color:#8b949e">Extensions:</label>
+                <input type="text" name="extensions" value="{{ allowed_ext }}" style="width:320px" placeholder=".html, .htm, .css, .js">
+                <button type="submit">Save</button>
+            </form>
+            <p style="color:#8b949e;font-size:.8rem;margin-top:.5rem">Comma-separated, e.g.: .html, .htm, .css, .js, .png, .jpg</p>
+        </div>
+    </div>
+
+    <div class="section">
         <h2>Create Directory</h2>
         <div class="box">
             <form method="POST" action="/mkdir">
@@ -139,7 +167,7 @@ DASHBOARD_HTML = """
                         {% endfor %}
                     </select>
                 </div>
-                <input type="file" name="files" accept=".html,.htm" multiple required><br>
+                <input type="file" name="files" accept="{{ allowed_ext }}" multiple required><br>
                 <button type="submit">Upload Files</button>
             </form>
         </div>
@@ -221,6 +249,7 @@ def logout():
 @app.route("/dashboard")
 @login_required
 def dashboard():
+    allowed = get_allowed_extensions()
     dirs = sorted(d for d in os.listdir(UPLOAD_DIR) if os.path.isdir(os.path.join(UPLOAD_DIR, d)))
     dir_files = {}
     for d in dirs:
@@ -228,13 +257,14 @@ def dashboard():
         found = []
         for root, _, filenames in os.walk(dpath):
             for fn in filenames:
-                if fn.endswith((".html", ".htm")):
+                if fn.lower().endswith(allowed):
                     rel = os.path.relpath(os.path.join(root, fn), dpath).replace("\\", "/")
                     found.append(rel)
         dir_files[d] = sorted(found)
+    allowed_ext = ", ".join(allowed)
     return render_template_string(
         DASHBOARD_HTML,
-        user=session["user"], dirs=dirs, dir_files=dir_files,
+        user=session["user"], dirs=dirs, dir_files=dir_files, allowed_ext=allowed_ext,
         msg=request.args.get("msg"), msg_type=request.args.get("msg_type", "success"),
     )
 
@@ -265,6 +295,23 @@ def rmdir(dirname):
     return redirect(url_for("dashboard", msg=f"Deleted directory '{dirname}'.", msg_type="success"))
 
 
+@app.route("/settings", methods=["POST"])
+@login_required
+def settings():
+    raw = request.form.get("extensions", "")
+    exts = []
+    for ext in raw.split(","):
+        ext = ext.strip().lower()
+        if ext and ext.startswith(".") and re.match(r'^\.[a-zA-Z0-9]+$', ext):
+            exts.append(ext)
+    if not exts:
+        return redirect(url_for("dashboard", msg="Provide at least one valid extension (e.g. .html).", msg_type="error"))
+    s = load_settings()
+    s["allowed_extensions"] = exts
+    save_settings(s)
+    return redirect(url_for("dashboard", msg=f"Allowed extensions updated: {', '.join(exts)}", msg_type="success"))
+
+
 @app.route("/upload", methods=["POST"])
 @login_required
 def upload():
@@ -275,6 +322,7 @@ def upload():
     if not os.path.isdir(dirpath):
         return redirect(url_for("dashboard", msg="Directory does not exist.", msg_type="error"))
 
+    allowed = get_allowed_extensions()
     files = request.files.getlist("files")
     if not files or all(f.filename == "" for f in files):
         return redirect(url_for("dashboard", msg="No files selected.", msg_type="error"))
@@ -285,8 +333,8 @@ def upload():
             continue
         # Sanitize: keep only the relative path within the uploaded folder
         rel_path = file.filename.replace("\\", "/")
-        # Only allow html/htm files
-        if not rel_path.lower().endswith((".html", ".htm")):
+        # Only allow configured file types
+        if not rel_path.lower().endswith(allowed):
             continue
         # Sanitize each path component
         parts = [p for p in rel_path.split("/") if p and p != ".." and not p.startswith(".")]
@@ -302,7 +350,7 @@ def upload():
         count += 1
 
     if count == 0:
-        return redirect(url_for("dashboard", msg="No .html/.htm files found.", msg_type="error"))
+        return redirect(url_for("dashboard", msg=f"No files matching allowed types ({', '.join(allowed)}).", msg_type="error"))
     return redirect(url_for("dashboard", msg=f"Uploaded {count} file(s) to {directory}/.", msg_type="success"))
 
 
