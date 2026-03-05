@@ -5,6 +5,7 @@ import os
 import json
 import secrets
 import re
+import shutil
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", secrets.token_hex(32))
@@ -127,7 +128,7 @@ DASHBOARD_HTML = """
     </div>
 
     <div class="section">
-        <h2>Upload File</h2>
+        <h2>Upload Files</h2>
         <div class="box">
             <form method="POST" action="/upload" enctype="multipart/form-data">
                 <div style="margin-bottom:.8rem">
@@ -138,8 +139,22 @@ DASHBOARD_HTML = """
                         {% endfor %}
                     </select>
                 </div>
-                <input type="file" name="file" accept=".html,.htm" required><br>
-                <button type="submit">Upload</button>
+                <input type="file" name="files" accept=".html,.htm" multiple required><br>
+                <button type="submit">Upload Files</button>
+            </form>
+        </div>
+        <div class="box">
+            <form method="POST" action="/upload" enctype="multipart/form-data">
+                <div style="margin-bottom:.8rem">
+                    <label style="color:#8b949e">Target directory:</label><br>
+                    <select name="directory" style="width:220px;margin-top:.3rem">
+                        {% for d in dirs %}
+                        <option value="{{ d }}">{{ d }}/</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <input type="file" name="files" webkitdirectory multiple required><br>
+                <button type="submit">Upload Folder</button>
             </form>
         </div>
     </div>
@@ -210,7 +225,13 @@ def dashboard():
     dir_files = {}
     for d in dirs:
         dpath = os.path.join(UPLOAD_DIR, d)
-        dir_files[d] = sorted(f for f in os.listdir(dpath) if f.endswith((".html", ".htm")))
+        found = []
+        for root, _, filenames in os.walk(dpath):
+            for fn in filenames:
+                if fn.endswith((".html", ".htm")):
+                    rel = os.path.relpath(os.path.join(root, fn), dpath).replace("\\", "/")
+                    found.append(rel)
+        dir_files[d] = sorted(found)
     return render_template_string(
         DASHBOARD_HTML,
         user=session["user"], dirs=dirs, dir_files=dir_files,
@@ -240,9 +261,7 @@ def rmdir(dirname):
     dirpath = os.path.join(UPLOAD_DIR, dirname)
     if not os.path.isdir(dirpath):
         return redirect(url_for("dashboard", msg="Directory not found.", msg_type="error"))
-    for f in os.listdir(dirpath):
-        os.remove(os.path.join(dirpath, f))
-    os.rmdir(dirpath)
+    shutil.rmtree(dirpath)
     return redirect(url_for("dashboard", msg=f"Deleted directory '{dirname}'.", msg_type="success"))
 
 
@@ -256,16 +275,35 @@ def upload():
     if not os.path.isdir(dirpath):
         return redirect(url_for("dashboard", msg="Directory does not exist.", msg_type="error"))
 
-    file = request.files.get("file")
-    if not file or file.filename == "":
-        return redirect(url_for("dashboard", msg="No file selected.", msg_type="error"))
+    files = request.files.getlist("files")
+    if not files or all(f.filename == "" for f in files):
+        return redirect(url_for("dashboard", msg="No files selected.", msg_type="error"))
 
-    filename = os.path.basename(file.filename)
-    if not filename.endswith((".html", ".htm")):
-        return redirect(url_for("dashboard", msg="Only .html/.htm files allowed.", msg_type="error"))
+    count = 0
+    for file in files:
+        if not file.filename:
+            continue
+        # Sanitize: keep only the relative path within the uploaded folder
+        rel_path = file.filename.replace("\\", "/")
+        # Only allow html/htm files
+        if not rel_path.lower().endswith((".html", ".htm")):
+            continue
+        # Sanitize each path component
+        parts = [p for p in rel_path.split("/") if p and p != ".." and not p.startswith(".")]
+        if not parts:
+            continue
+        # Create subdirectories if folder upload
+        if len(parts) > 1:
+            subdir = os.path.join(dirpath, *parts[:-1])
+            os.makedirs(subdir, exist_ok=True)
+            file.save(os.path.join(subdir, parts[-1]))
+        else:
+            file.save(os.path.join(dirpath, parts[0]))
+        count += 1
 
-    file.save(os.path.join(dirpath, filename))
-    return redirect(url_for("dashboard", msg=f"Uploaded '{filename}' to {directory}/.", msg_type="success"))
+    if count == 0:
+        return redirect(url_for("dashboard", msg="No .html/.htm files found.", msg_type="error"))
+    return redirect(url_for("dashboard", msg=f"Uploaded {count} file(s) to {directory}/.", msg_type="success"))
 
 
 @app.route("/view/<directory>/<path:filename>")
@@ -274,7 +312,11 @@ def view(directory, filename):
     if not directory:
         return "Not found", 404
     dirpath = os.path.join(UPLOAD_DIR, directory)
-    return send_from_directory(dirpath, os.path.basename(filename))
+    # Prevent path traversal
+    full = os.path.normpath(os.path.join(dirpath, filename))
+    if not full.startswith(os.path.normpath(dirpath)):
+        return "Not found", 404
+    return send_from_directory(dirpath, filename)
 
 
 @app.route("/delete/<directory>/<path:filename>", methods=["POST"])
@@ -283,7 +325,9 @@ def delete(directory, filename):
     directory = safe_dirname(directory)
     if not directory:
         return redirect(url_for("dashboard", msg="Invalid directory.", msg_type="error"))
-    filepath = os.path.join(UPLOAD_DIR, directory, os.path.basename(filename))
+    filepath = os.path.normpath(os.path.join(UPLOAD_DIR, directory, filename))
+    if not filepath.startswith(os.path.normpath(os.path.join(UPLOAD_DIR, directory))):
+        return redirect(url_for("dashboard", msg="Invalid path.", msg_type="error"))
     if os.path.exists(filepath):
         os.remove(filepath)
         return redirect(url_for("dashboard", msg=f"Deleted '{filename}'.", msg_type="success"))
