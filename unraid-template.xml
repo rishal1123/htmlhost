@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>HTMLHost</Name>
+  <Repository>ghcr.io/swissthemaker/htmlhost:latest</Repository>
+  <Registry>https://github.com/SwisstheMaker/htmlhost/pkgs/container/htmlhost</Registry>
+  <Branch>
+    <Tag>latest</Tag>
+    <TagDescription>Latest stable release</TagDescription>
+  </Branch>
+  <Network>bridge</Network>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/SwisstheMaker/htmlhost/issues</Support>
+  <Project>https://github.com/SwisstheMaker/htmlhost</Project>
+  <Overview>A simple web app to upload and host HTML files. Upload .html files via the web UI and they are instantly hosted. Re-uploading a file with the same name replaces it.</Overview>
+  <Category>Tools: Network:Web</Category>
+  <WebUI>http://[IP]:[PORT:5000]</WebUI>
+  <Icon>https://raw.githubusercontent.com/SwisstheMaker/htmlhost/main/icon.png</Icon>
+  <ExtraParams/>
+  <DateInstalled/>
+  <Description>A simple web app to upload and host HTML files.</Description>
+  <Config Name="Web UI Port" Target="5000" Default="5000" Mode="tcp" Description="Web interface port" Type="Port" Display="always" Required="true" Mask="false">5000</Config>
+  <Config Name="Uploads" Target="/app/uploads" Default="/mnt/user/appdata/htmlhost/uploads" Mode="rw" Description="Where uploaded HTML files are stored" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/htmlhost/uploads</Config>
+</Container>
