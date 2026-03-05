@@ -1,20 +1,20 @@
 <?xml version="1.0"?>
 <Container version="2">
   <Name>HTMLHost</Name>
-  <Repository>ghcr.io/swissthemaker/htmlhost:latest</Repository>
-  <Registry>https://github.com/SwisstheMaker/htmlhost/pkgs/container/htmlhost</Registry>
+  <Repository>ghcr.io/rishal1123/htmlhost:latest</Repository>
+  <Registry>https://github.com/rishal1123/htmlhost/pkgs/container/htmlhost</Registry>
   <Branch>
     <Tag>latest</Tag>
     <TagDescription>Latest stable release</TagDescription>
   </Branch>
   <Network>bridge</Network>
   <Privileged>false</Privileged>
-  <Support>https://github.com/SwisstheMaker/htmlhost/issues</Support>
-  <Project>https://github.com/SwisstheMaker/htmlhost</Project>
+  <Support>https://github.com/rishal1123/htmlhost/issues</Support>
+  <Project>https://github.com/rishal1123/htmlhost</Project>
   <Overview>A simple web app to upload and host HTML files. Upload .html files via the web UI and they are instantly hosted. Re-uploading a file with the same name replaces it.</Overview>
   <Category>Tools: Network:Web</Category>
   <WebUI>http://[IP]:[PORT:5000]</WebUI>
-  <Icon>https://raw.githubusercontent.com/SwisstheMaker/htmlhost/main/icon.png</Icon>
+  <Icon>https://raw.githubusercontent.com/rishal1123/htmlhost/main/icon.png</Icon>
   <ExtraParams/>
   <DateInstalled/>
   <Description>A simple web app to upload and host HTML files.</Description>
